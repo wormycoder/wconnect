@@ -32,7 +32,11 @@ function initApp() {
 
   // Settings display
   const sd = document.getElementById('settings-username-display');
-  if (sd) sd.textContent = PROFILE?.username || 'Anonymous';
+if (sd) sd.textContent = PROFILE?.username || 'Anonymous';
+const pu = document.getElementById('settings-perm-username');
+if (pu) pu.textContent = PROFILE?.username || 'Anonymous';
+const dn = document.getElementById('settings-displayname');
+if (dn) dn.value = PROFILE?.displayName || PROFILE?.username || '';
   setAvatar(document.getElementById('settings-avatar'), PROFILE?.username || '?');
 
   // Presence
