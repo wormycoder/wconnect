@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-color="blue">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WConnect</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-bg"></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="fa-solid fa-w"></i></div>
+      <span class="logo-text">WConnect</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="signup">Sign Up</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form" class="auth-form">
+      <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input type="text" id="login-username" placeholder="Username or Email" />
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="login-password" placeholder="Password" />
+      </div>
+      <button class="btn-primary" id="login-btn">Sign In</button>
+      <div class="auth-divider"><span>or</span></div>
+      <button class="btn-google" id="google-login-btn"><i class="fa-brands fa-google"></i> Continue with Google</button>
+      <button class="btn-anon" id="anon-btn"><i class="fa-solid fa-ghost"></i> Browse Anonymously</button>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signup-form" class="auth-form hidden">
+      <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input type="text" id="signup-username" placeholder="Username (unique)" />
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-envelope"></i>
+        <input type="email" id="signup-email" placeholder="Email (optional but recommended)" />
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="signup-password" placeholder="Password" />
+      </div>
+      <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="signup-confirm" placeholder="Confirm Password" />
+      </div>
+      <button class="btn-primary" id="signup-btn">Create Account</button>
+      <div class="auth-divider"><span>or</span></div>
+      <button class="btn-google" id="google-signup-btn"><i class="fa-brands fa-google"></i> Sign up with Google</button>
+    </div>
+
+    <p id="auth-error" class="auth-error hidden"></p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon sm"><i class="fa-solid fa-w"></i></div>
+        <span>WConnect</span>
+      </div>
+      <button class="icon-btn" id="sidebar-toggle" title="Collapse"><i class="fa-solid fa-bars"></i></button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="global"><i class="fa-solid fa-globe"></i><span>Global</span></button>
+      <button class="nav-item" data-view="dms"><i class="fa-solid fa-message"></i><span>Messages</span><span class="badge hidden" id="dm-badge">0</span></button>
+      <button class="nav-item" data-view="groups"><i class="fa-solid fa-users"></i><span>Groups</span></button>
+      <button class="nav-item" data-view="friends"><i class="fa-solid fa-user-group"></i><span>Friends</span><span class="badge hidden" id="friend-badge">0</span></button>
+      <button class="nav-item" data-view="discover"><i class="fa-solid fa-magnifying-glass"></i><span>Discover</span></button>
+      <button class="nav-item" data-view="ai"><i class="fa-solid fa-robot"></i><span>AI Chat</span><span class="pill-new">NEW</span></button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item" data-view="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></button>
+      <div class="user-chip" id="sidebar-user">
+        <div class="avatar sm" id="sidebar-avatar"></div>
+        <div class="user-chip-info">
+          <span class="user-chip-name" id="sidebar-username">Loading...</span>
+          <span class="user-chip-status online">● Online</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- GLOBAL CHAT -->
+    <div id="view-global" class="view active">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-globe"></i> Global Chat</div>
+        <span class="view-sub">Everyone on WConnect</span>
+      </div>
+      <div class="chat-area" id="global-messages"></div>
+      <div class="chat-input-bar">
+        <div class="chat-input-wrap">
+          <input type="text" id="global-input" placeholder="Message everyone..." />
+          <button class="send-btn" id="global-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DMs -->
+    <div id="view-dms" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-message"></i> Direct Messages</div>
+      </div>
+      <div class="two-panel">
+        <div class="panel-list" id="dm-list">
+          <div class="panel-list-header">Conversations</div>
+          <div id="dm-conversations"></div>
+        </div>
+        <div class="panel-chat" id="dm-chat">
+          <div class="empty-state"><i class="fa-solid fa-message"></i><p>Select a conversation</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUPS -->
+    <div id="view-groups" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-users"></i> Group Chats</div>
+        <button class="btn-primary sm" id="create-group-btn"><i class="fa-solid fa-plus"></i> New Group</button>
+      </div>
+      <div class="two-panel">
+        <div class="panel-list" id="group-list">
+          <div class="panel-list-header">Your Groups</div>
+          <div id="group-rooms"></div>
+        </div>
+        <div class="panel-chat" id="group-chat">
+          <div class="empty-state"><i class="fa-solid fa-users"></i><p>Select a group or create one</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRIENDS -->
+    <div id="view-friends" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-user-group"></i> Friends</div>
+      </div>
+      <div class="friends-tabs">
+        <button class="friends-tab active" data-ftab="friends-list">Friends</button>
+        <button class="friends-tab" data-ftab="pending-in">Pending <span class="badge hidden" id="pending-badge">0</span></button>
+        <button class="friends-tab" data-ftab="pending-out">Sent</button>
+        <button class="friends-tab" data-ftab="add-friend">Add Friend</button>
+      </div>
+      <div id="friends-list" class="friends-panel"></div>
+      <div id="pending-in" class="friends-panel hidden"></div>
+      <div id="pending-out" class="friends-panel hidden"></div>
+      <div id="add-friend" class="friends-panel hidden">
+        <div class="search-bar-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="friend-search-input" placeholder="Search username..." />
+          <button class="btn-primary sm" id="friend-search-btn">Search</button>
+        </div>
+        <div id="friend-search-results"></div>
+      </div>
+    </div>
+
+    <!-- DISCOVER -->
+    <div id="view-discover" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-magnifying-glass"></i> Discover People</div>
+      </div>
+      <div class="search-bar-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="discover-input" placeholder="Search all users..." />
+      </div>
+      <div id="discover-results" class="user-grid"></div>
+    </div>
+
+    <!-- AI CHAT -->
+    <div id="view-ai" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-robot"></i> AI Assistant</div>
+        <button class="btn-ghost sm" id="ai-clear-btn"><i class="fa-solid fa-trash"></i> Clear</button>
+      </div>
+      <div class="chat-area" id="ai-messages">
+        <div class="ai-welcome">
+          <div class="ai-avatar"><i class="fa-solid fa-robot"></i></div>
+          <p>Hi! I'm your WConnect AI. Ask me anything!</p>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <div class="chat-input-wrap">
+          <input type="text" id="ai-input" placeholder="Ask the AI anything..." />
+          <button class="send-btn" id="ai-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="view-settings" class="view hidden">
+      <div class="view-header">
+        <div class="view-title"><i class="fa-solid fa-gear"></i> Settings</div>
+      </div>
+      <div class="settings-body">
+
+        <div class="settings-section">
+          <h3>Profile</h3>
+          <div class="settings-row">
+            <div class="avatar lg" id="settings-avatar"></div>
+            <div>
+              <p class="settings-label">Username</p>
+              <p id="settings-username-display" class="settings-value"></p>
+            </div>
+          </div>
+          <div class="settings-row col">
+            <label>Add / Update Email</label>
+            <input type="email" id="settings-email" placeholder="your@email.com" />
+            <div class="settings-row" style="gap:8px;margin-top:8px">
+              <input type="checkbox" id="email-notif" />
+              <label for="email-notif">Send me email notifications (messages, friend requests)</label>
+            </div>
+            <button class="btn-primary sm" id="save-email-btn">Save Email</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Appearance</h3>
+          <div class="settings-row">
+            <span>Theme</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-theme-toggle="light"><i class="fa-solid fa-sun"></i> Light</button>
+              <button class="toggle-btn" data-theme-toggle="dark"><i class="fa-solid fa-moon"></i> Dark</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span>Accent Color</span>
+            <div class="color-swatches" id="color-swatches">
+              <button class="swatch active" data-color="blue" style="--sc:#3B82F6"></button>
+              <button class="swatch" data-color="red" style="--sc:#EF4444"></button>
+              <button class="swatch" data-color="green" style="--sc:#22C55E"></button>
+              <button class="swatch" data-color="purple" style="--sc:#A855F7"></button>
+              <button class="swatch" data-color="orange" style="--sc:#F97316"></button>
+              <button class="swatch" data-color="pink" style="--sc:#EC4899"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Account</h3>
+          <button class="btn-danger" id="signout-btn"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+        </div>
+
+        <div class="settings-section">
+          <h3>Support WConnect ❤️</h3>
+          <div class="monetize-cards">
+            <div class="monetize-card">
+              <div class="monetize-icon"><i class="fa-solid fa-crown"></i></div>
+              <h4>WConnect Pro</h4>
+              <p>Custom profile badge, priority AI, larger file uploads, exclusive themes</p>
+              <button class="btn-primary" id="buy-pro-btn">Upgrade — $4.99/mo</button>
+            </div>
+            <div class="monetize-card">
+              <div class="monetize-icon"><i class="fa-solid fa-heart"></i></div>
+              <h4>Donate</h4>
+              <p>Support the platform and keep it free for everyone</p>
+              <button class="btn-outline" id="donate-btn"><i class="fa-brands fa-paypal"></i> Donate via PayPal</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- CREATE GROUP MODAL -->
+<div id="group-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Create Group Chat</h3>
+      <button class="icon-btn" id="close-group-modal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <input type="text" id="group-name-input" placeholder="Group name..." class="modal-input" />
+    <p class="modal-label">Select friends to add:</p>
+    <div id="group-friend-select" class="friend-select-list"></div>
+    <button class="btn-primary" id="confirm-create-group">Create Group</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- FIREBASE -->
+<script type="module" src="js/firebase-init.js"></script>
+<script type="module" src="js/auth.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
