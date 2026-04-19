@@ -404,54 +404,63 @@ async function loadFriends() {
 
 async function loadFriendPanel(panel) {
   const el = document.getElementById(panel);
+  if (!el) return;
+
+  // Add-friend tab has its own UI — don't touch it
+  if (panel === 'add-friend') return;
+
   el.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
 
-  if (panel === 'friends-list') {
-    const friends = await getMyFriends();
-    el.innerHTML = '';
-    if (!friends.length) {
-      el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-group"></i><p>No friends yet. Add some!</p></div>`;
-      return;
-    }
-    friends.forEach(f => el.appendChild(buildFriendCard(f, 'friend')));
+  try {
+    if (panel === 'friends-list') {
+      const friends = await getMyFriends();
+      el.innerHTML = '';
+      if (!friends.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-user-group"></i><p>No friends yet. Add some!</p></div>`;
+        return;
+      }
+      friends.forEach(f => el.appendChild(buildFriendCard(f, 'friend')));
 
-  } else if (panel === 'pending-in') {
-    const q = query(collection(db, 'friendships'),
-      where('status', '==', 'pending'),
-      where('to', '==', ME.uid));
-    const snap = await getDocs(q);
-    el.innerHTML = '';
-    const badge = document.getElementById('pending-badge');
-    badge.textContent = snap.size;
-    badge.classList.toggle('hidden', snap.size === 0);
-    document.getElementById('friend-badge').textContent = snap.size;
-    document.getElementById('friend-badge').classList.toggle('hidden', snap.size === 0);
+    } else if (panel === 'pending-in') {
+      // Query only by 'to' field — avoids needing a composite index
+      const q = query(collection(db, 'friendships'), where('to', '==', ME.uid));
+      const snap = await getDocs(q);
+      const pending = snap.docs.filter(d => d.data().status === 'pending');
+      el.innerHTML = '';
+      const badge = document.getElementById('pending-badge');
+      badge.textContent = pending.length;
+      badge.classList.toggle('hidden', pending.length === 0);
+      document.getElementById('friend-badge').textContent = pending.length;
+      document.getElementById('friend-badge').classList.toggle('hidden', pending.length === 0);
 
-    if (snap.empty) {
-      el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>No pending requests</p></div>`;
-      return;
-    }
-    for (const d of snap.docs) {
-      const data = d.data();
-      const uSnap = await getDoc(doc(db, 'users', data.from));
-      if (uSnap.exists()) el.appendChild(buildFriendCard({ uid: data.from, friendshipId: d.id, ...uSnap.data() }, 'pending-in'));
-    }
+      if (!pending.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-inbox"></i><p>No pending requests</p></div>`;
+        return;
+      }
+      for (const d of pending) {
+        const data = d.data();
+        const uSnap = await getDoc(doc(db, 'users', data.from));
+        if (uSnap.exists()) el.appendChild(buildFriendCard({ uid: data.from, friendshipId: d.id, ...uSnap.data() }, 'pending-in'));
+      }
 
-  } else if (panel === 'pending-out') {
-    const q = query(collection(db, 'friendships'),
-      where('status', '==', 'pending'),
-      where('from', '==', ME.uid));
-    const snap = await getDocs(q);
-    el.innerHTML = '';
-    if (snap.empty) {
-      el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-paper-plane"></i><p>No sent requests</p></div>`;
-      return;
+    } else if (panel === 'pending-out') {
+      // Query only by 'from' field — avoids needing a composite index
+      const q = query(collection(db, 'friendships'), where('from', '==', ME.uid));
+      const snap = await getDocs(q);
+      const pending = snap.docs.filter(d => d.data().status === 'pending');
+      el.innerHTML = '';
+      if (!pending.length) {
+        el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-paper-plane"></i><p>No sent requests</p></div>`;
+        return;
+      }
+      for (const d of pending) {
+        const data = d.data();
+        const uSnap = await getDoc(doc(db, 'users', data.to));
+        if (uSnap.exists()) el.appendChild(buildFriendCard({ uid: data.to, friendshipId: d.id, ...uSnap.data() }, 'pending-out'));
+      }
     }
-    for (const d of snap.docs) {
-      const data = d.data();
-      const uSnap = await getDoc(doc(db, 'users', data.to));
-      if (uSnap.exists()) el.appendChild(buildFriendCard({ uid: data.to, friendshipId: d.id, ...uSnap.data() }, 'pending-out'));
-    }
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><p>Failed to load. Check Firestore indexes.<br><span style="font-size:11px;color:var(--text3)">${e.message}</span></p></div>`;
   }
 }
 
