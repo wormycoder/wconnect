@@ -269,6 +269,13 @@ a { text-decoration: none; color: inherit; }
 }
 .send-btn:hover { background: var(--accent-hover); }
 
+.attach-btn {
+  background: transparent; color: var(--text3); width: 28px; height: 28px;
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); flex-shrink: 0; font-size: 15px;
+}
+.attach-btn:hover { color: var(--accent); background: var(--bg2); }
+
 /* MESSAGE */
 .msg { display: flex; gap: 10px; padding: 4px 0; animation: msgIn 0.2s ease; }
 @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
