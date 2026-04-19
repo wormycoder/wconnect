@@ -786,7 +786,8 @@ document.getElementById('save-displayname-btn').addEventListener('click', async 
   if (displayName.length > 32) { showToast('Display name too long (max 32 chars).', 'error'); return; }
   await updateDoc(doc(db, 'users', ME.uid), { displayName });
   PROFILE.displayName = displayName;
-  showToast('Display name saved!', 'success');
+  PROFILE.username = displayName;
+  showToast('Display name saved! Rejoin the page to see it in chat.', 'success');
 });
 document.getElementById('save-email-btn').addEventListener('click', async () => {
   const email = document.getElementById('settings-email').value.trim();
