@@ -779,6 +779,15 @@ document.querySelector(`[data-theme-toggle="${savedTheme}"]`)?.classList.add('ac
 document.querySelector(`[data-color="${savedColor}"]`)?.classList.add('active');
 
 // Save email
+// Save display name
+document.getElementById('save-displayname-btn').addEventListener('click', async () => {
+  const displayName = document.getElementById('settings-displayname').value.trim();
+  if (!displayName) { showToast('Enter a display name.', 'error'); return; }
+  if (displayName.length > 32) { showToast('Display name too long (max 32 chars).', 'error'); return; }
+  await updateDoc(doc(db, 'users', ME.uid), { displayName });
+  PROFILE.displayName = displayName;
+  showToast('Display name saved!', 'success');
+});
 document.getElementById('save-email-btn').addEventListener('click', async () => {
   const email = document.getElementById('settings-email').value.trim();
   const notif = document.getElementById('email-notif').checked;
