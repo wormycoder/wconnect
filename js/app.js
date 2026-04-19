@@ -865,8 +865,6 @@ document.getElementById('save-username-btn')?.addEventListener('click', async ()
   }
 
   // Check uniqueness
-  const { getDocs: gds, query: q2, collection: col2, where: wh } =
-    await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
   const taken = await getDocs(query(collection(db, 'users'), where('usernameLower', '==', newUsername.toLowerCase())));
   if (!taken.empty) { showToast('That username is already taken. Try another.', 'error'); return; }
 
