@@ -102,20 +102,101 @@ function loadGlobalChat() {
 document.getElementById('global-send').addEventListener('click', sendGlobal);
 document.getElementById('global-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendGlobal(); });
 
-async function sendGlobal() {
+async function sendGlobal(text = null, fileData = null) {
   const input = document.getElementById('global-input');
-  const text = input.value.trim();
-  if (!text || !ME) return;
+  if (!text) text = input.value.trim();
+  if ((!text && !fileData) || !ME) return;
   input.value = '';
-  // Always fetch fresh profile so display name is current
   const freshSnap = await getDoc(doc(db, 'users', ME.uid));
   if (freshSnap.exists()) PROFILE = freshSnap.data();
   await addDoc(collection(db, 'global'), {
-    text, uid: ME.uid,
+    text: text || '',
+    fileData: fileData || null,
+    uid: ME.uid,
     username: PROFILE?.displayName || PROFILE?.username || 'Anonymous',
     createdAt: serverTimestamp()
   });
+  // Trim oldest messages so global never exceeds 40
+  const trimQ = query(collection(db, 'global'), orderBy('createdAt', 'desc'), limit(100));
+  const trimSnap = await getDocs(trimQ);
+  if (trimSnap.size > 40) {
+    const toDelete = trimSnap.docs.slice(40);
+    for (const d of toDelete) await deleteDoc(doc(db, 'global', d.id));
+  }
 }
+
+// ─── FILE / AD LOGIC ───────────────────────────────────────────────
+let _pendingFileData = null;
+
+document.getElementById('global-attach-btn').addEventListener('click', () => {
+  _pendingFileData = null;
+  document.getElementById('global-file-input').value = '';
+  document.getElementById('global-file-input').click();
+});
+
+document.getElementById('global-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 500 * 1024) {
+    showToast('File must be under 500KB.', 'error');
+    return;
+  }
+  // Read file as base64
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  _pendingFileData = { dataUrl, name: file.name, type: file.type, size: file.size };
+  showAdModal();
+});
+
+function showAdModal() {
+  const modal = document.getElementById('ad-modal');
+  const countdown = document.getElementById('ad-countdown');
+  const fileReady = document.getElementById('ad-file-ready');
+  const preview = document.getElementById('ad-file-preview');
+  modal.classList.remove('hidden');
+  fileReady.classList.add('hidden');
+  countdown.textContent = '5';
+
+  // Show file preview info
+  if (_pendingFileData) {
+    const kb = (_pendingFileData.size / 1024).toFixed(1);
+    preview.innerHTML = `<i class="fa-solid fa-file" style="color:var(--accent)"></i> <strong>${_pendingFileData.name}</strong> · ${kb}KB`;
+  }
+
+  let secs = 5;
+  const timer = setInterval(() => {
+    secs--;
+    countdown.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(timer);
+      countdown.parentElement.style.display = 'none';
+      fileReady.classList.remove('hidden');
+    }
+  }, 1000);
+
+  // Store timer ref so cancel can clear it
+  modal._adTimer = timer;
+}
+
+document.getElementById('ad-cancel-btn').addEventListener('click', () => {
+  clearInterval(document.getElementById('ad-modal')._adTimer);
+  document.getElementById('ad-modal').classList.add('hidden');
+  document.getElementById('ad-container').style.display = 'flex';
+  _pendingFileData = null;
+});
+
+document.getElementById('ad-send-file-btn').addEventListener('click', async () => {
+  if (!_pendingFileData) return;
+  document.getElementById('ad-modal').classList.add('hidden');
+  document.getElementById('ad-container').style.display = 'flex';
+  await sendGlobal('', _pendingFileData);
+  _pendingFileData = null;
+  showToast('File sent!', 'success');
+});
 
 // ─── MESSAGE BUILDER ───────────────────────────────────────────────
 function buildMsg(data, isOwn, isAI = false) {
@@ -143,7 +224,26 @@ function buildMsg(data, isOwn, isAI = false) {
 
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
-  bubble.textContent = data.text;
+  if (data.text) bubble.textContent = data.text;
+
+  if (data.fileData) {
+    const { dataUrl, name, type, size } = data.fileData;
+    if (type && type.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = name;
+      img.style.cssText = 'max-width:260px;max-height:200px;border-radius:8px;display:block;margin-top:4px;cursor:pointer';
+      img.addEventListener('click', () => window.open(dataUrl, '_blank'));
+      bubble.appendChild(img);
+    } else {
+      const fileLink = document.createElement('a');
+      fileLink.href = dataUrl;
+      fileLink.download = name;
+      fileLink.style.cssText = 'display:flex;align-items:center;gap:8px;color:var(--accent);font-size:13px;text-decoration:none;margin-top:4px';
+      fileLink.innerHTML = `<i class="fa-solid fa-file"></i> ${name} <span style="color:var(--text3);font-size:11px">(${(size/1024).toFixed(1)}KB)</span>`;
+      bubble.appendChild(fileLink);
+    }
+  }
 
   content.appendChild(meta);
   content.appendChild(bubble);
