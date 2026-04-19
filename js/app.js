@@ -898,20 +898,24 @@ async function sendAI() {
   container.scrollTop = container.scrollHeight;
 
   try {
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: 'You are a helpful AI assistant built into WConnect, a chat platform. Be friendly, concise, and helpful.' }] },
-        contents: aiHistory.map(m => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        }))
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 1024,
+        messages: [
+          { role: 'system', content: 'You are a helpful AI assistant built into WConnect, a chat platform. Be friendly, concise, and helpful.' },
+          ...aiHistory
+        ]
       })
     });
     const data = await resp.json();
     if (data.error) throw new Error(data.error.message);
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I had trouble responding.';
+    const reply = data.choices?.[0]?.message?.content || 'Sorry, I had trouble responding.';
     aiHistory.push({ role: 'assistant', content: reply });
     typing.remove();
     container.appendChild(buildMsg({ text: reply, username: 'AI', uid: '__ai__', createdAt: null }, false, true));
@@ -1057,7 +1061,7 @@ if (keyInput && window._wcAiKey) keyInput.value = window._wcAiKey;
 
 document.getElementById('save-ai-key-btn')?.addEventListener('click', () => {
   const key = document.getElementById('ai-api-key-input').value.trim();
-  if (!key.startsWith('AIza')) { showToast('That doesn\'t look like a valid Gemini key. It should start with AIza', 'error'); return; }
+  if (!key.startsWith('gsk_')) { showToast('That doesn\'t look like a valid Groq key. It should start with gsk_', 'error'); return; }
   window._wcAiKey = key;
   localStorage.setItem('wc-ai-key', key);
   showToast('API key saved! AI chat is ready.', 'success');
