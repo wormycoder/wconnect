@@ -696,18 +696,68 @@ async function searchUsers(term) {
     info.className = 'user-card-info';
     info.innerHTML = `<div class="user-card-name">${user.username}</div><div class="user-card-sub">${user.isPro ? '⭐ Pro' : 'Member'}</div>`;
 
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-primary sm'; addBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i>';
-    addBtn.addEventListener('click', async () => {
-      const status = await getFriendshipStatus(user.uid);
-      if (status !== 'none') { showToast('Already connected.'); return; }
-      await addDoc(collection(db, 'friendships'), {
-        from: ME.uid, to: user.uid, members: [ME.uid, user.uid], status: 'pending', createdAt: serverTimestamp()
-      });
-      showToast(`Request sent to ${user.username}!`, 'success');
-    });
+    const actions = document.createElement('div');
+    actions.className = 'user-card-actions';
 
-    card.appendChild(av); card.appendChild(info); card.appendChild(addBtn);
+    const status = await getFriendshipStatus(user.uid);
+
+    const btn = document.createElement('button');
+
+    const setAddState = () => {
+      btn.className = 'btn-primary sm';
+      btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Add';
+      btn.disabled = false;
+      btn.onclick = async () => {
+        await addDoc(collection(db, 'friendships'), {
+          from: ME.uid, to: user.uid, members: [ME.uid, user.uid], status: 'pending', createdAt: serverTimestamp()
+        });
+        setRequestedState();
+        showToast(`Request sent to ${user.username}!`, 'success');
+      };
+    };
+
+    const setRequestedState = () => {
+      btn.className = 'btn-ghost sm';
+      btn.innerHTML = '<i class="fa-solid fa-clock"></i> Requested';
+      btn.disabled = true;
+      btn.onclick = null;
+    };
+
+    const setFriendState = () => {
+      btn.className = 'btn-danger sm';
+      btn.innerHTML = '<i class="fa-solid fa-user-minus"></i> Unfriend';
+      btn.disabled = false;
+      btn.onclick = async () => {
+        const fId = await getFriendshipId(user.uid);
+        if (!fId) return;
+        await deleteDoc(doc(db, 'friendships', fId));
+        setAddState();
+        showToast(`Unfriended ${user.username}.`);
+      };
+    };
+
+    if (status === 'accepted') {
+      setFriendState();
+    } else if (status === 'pending_out') {
+      setRequestedState();
+    } else if (status === 'pending_in') {
+      btn.className = 'btn-primary sm';
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Accept';
+      btn.disabled = false;
+      btn.onclick = async () => {
+        const fId = await getFriendshipId(user.uid);
+        if (fId) {
+          await updateDoc(doc(db, 'friendships', fId), { status: 'accepted' });
+          setFriendState();
+          showToast(`You and ${user.username} are now friends!`, 'success');
+        }
+      };
+    } else {
+      setAddState();
+    }
+
+    actions.appendChild(btn);
+    card.appendChild(av); card.appendChild(info); card.appendChild(actions);
     container.appendChild(card);
   }
 }
