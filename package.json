@@ -5,6 +5,6 @@
     "serve": "^14.2.4"
   },
   "scripts": {
-    "start": "npx serve . -p $PORT"
+    "start": "npx serve . -s -p $PORT"
   }
 }
