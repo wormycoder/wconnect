@@ -224,14 +224,6 @@
             </div>
           </div>
           <div class="settings-row col">
-  <label>Display Name <span style="font-size:11px;color:var(--text3)">(shown in chat)</span></label>
-  <input type="text" id="settings-displayname" placeholder="How you appear in chat..." style="background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:14px;width:100%;transition:border-color var(--transition)" />
-  <button class="btn-primary sm" id="save-displayname-btn">Save Display Name</button>
-</div>
-<div class="settings-row">
-  <span style="font-size:13px;color:var(--text3)">🔒 Username (permanent): <strong style="color:var(--text)" id="settings-perm-username"></strong></span>
-</div>
-          <div class="settings-row col">
             <label>Add / Update Email</label>
             <input type="email" id="settings-email" placeholder="your@email.com" />
             <div class="settings-row" style="gap:8px;margin-top:8px">
@@ -261,6 +253,29 @@
               <button class="swatch" data-color="orange" style="--sc:#F97316"></button>
               <button class="swatch" data-color="pink" style="--sc:#EC4899"></button>
             </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Display Name</h3>
+          <div class="settings-row col">
+            <label>Display Name <span style="font-size:11px;color:var(--text3)">(shown in chat bubbles)</span></label>
+            <input type="text" id="settings-displayname" placeholder="How you appear in chat..." style="background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:14px;width:100%" />
+            <button class="btn-primary sm" id="save-displayname-btn">Save Display Name</button>
+          </div>
+          <div class="settings-row">
+            <span style="font-size:13px;color:var(--text3)">🔒 Username (permanent): <strong style="color:var(--text)" id="settings-perm-username"></strong></span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>🤖 AI Chat Setup</h3>
+          <p style="font-size:13px;color:var(--text2);line-height:1.5">To use the AI chat, you need a free Anthropic API key. Your key is stored only in your browser — never sent to our servers.</p>
+          <div class="settings-row col" style="margin-top:4px">
+            <label>Anthropic API Key</label>
+            <input type="password" id="ai-api-key-input" placeholder="sk-ant-..." style="background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:14px;width:100%;font-family:var(--mono)" />
+            <button class="btn-primary sm" id="save-ai-key-btn">Save Key</button>
+            <span style="font-size:11px;color:var(--text3)">Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a> → API Keys</span>
           </div>
         </div>
 
