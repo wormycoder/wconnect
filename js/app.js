@@ -106,7 +106,7 @@ async function sendGlobal() {
   input.value = '';
   await addDoc(collection(db, 'global'), {
     text, uid: ME.uid,
-   username: PROFILE?.displayName || PROFILE?.username || 'Anonymous',
+    username: PROFILE?.displayName || PROFILE?.username || 'Anonymous',
     createdAt: serverTimestamp()
   });
 }
