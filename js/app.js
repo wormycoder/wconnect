@@ -27,17 +27,17 @@ window.addEventListener('app-ready', ({ detail }) => {
 function initApp() {
   // Sidebar user chip
   const el = document.getElementById('sidebar-username');
-  if (el) el.textContent = PROFILE?.username || 'Anonymous';
-  setAvatar(document.getElementById('sidebar-avatar'), PROFILE?.username || '?');
+  if (el) el.textContent = PROFILE?.displayName || PROFILE?.username || 'Anonymous';
+  setAvatar(document.getElementById('sidebar-avatar'), PROFILE?.displayName || PROFILE?.username || '?');
 
   // Settings display
   const sd = document.getElementById('settings-username-display');
-if (sd) sd.textContent = PROFILE?.username || 'Anonymous';
-const pu = document.getElementById('settings-perm-username');
-if (pu) pu.textContent = PROFILE?.username || 'Anonymous';
-const dn = document.getElementById('settings-displayname');
-if (dn) dn.value = PROFILE?.displayName || PROFILE?.username || '';
-  setAvatar(document.getElementById('settings-avatar'), PROFILE?.username || '?');
+  if (sd) sd.textContent = PROFILE?.username || 'Anonymous';
+  const pu = document.getElementById('settings-perm-username');
+  if (pu) pu.textContent = PROFILE?.username || 'Anonymous';
+  const dn = document.getElementById('settings-displayname');
+  if (dn) dn.value = PROFILE?.displayName || PROFILE?.username || '';
+  setAvatar(document.getElementById('settings-avatar'), PROFILE?.displayName || PROFILE?.username || '?');
 
   // Presence
   setupPresence();
@@ -104,6 +104,9 @@ async function sendGlobal() {
   const text = input.value.trim();
   if (!text || !ME) return;
   input.value = '';
+  // Always fetch fresh profile so display name is current
+  const freshSnap = await getDoc(doc(db, 'users', ME.uid));
+  if (freshSnap.exists()) PROFILE = freshSnap.data();
   await addDoc(collection(db, 'global'), {
     text, uid: ME.uid,
     username: PROFILE?.displayName || PROFILE?.username || 'Anonymous',
@@ -201,6 +204,8 @@ async function openDM(dmId, otherId, otherName) {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
+    const freshSnap = await getDoc(doc(db, 'users', ME.uid));
+    if (freshSnap.exists()) PROFILE = freshSnap.data();
     await addDoc(collection(db, 'dms', dmId, 'messages'), {
       text, uid: ME.uid, username: PROFILE?.displayName || PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
     });
@@ -306,6 +311,8 @@ async function openGroup(groupId, data) {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
+    const freshSnap = await getDoc(doc(db, 'users', ME.uid));
+    if (freshSnap.exists()) PROFILE = freshSnap.data();
     await addDoc(collection(db, 'groups', groupId, 'messages'), {
       text, uid: ME.uid, username: PROFILE?.displayName || PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
     });
@@ -706,16 +713,21 @@ async function sendAI() {
   const input = document.getElementById('ai-input');
   const text = input.value.trim();
   if (!text) return;
-  input.value = '';
 
+  const apiKey = window._wcAiKey;
+  if (!apiKey) {
+    showToast('Enter your Anthropic API key in AI settings first.', 'error');
+    document.querySelector('[data-view="settings"]').click();
+    return;
+  }
+
+  input.value = '';
   const container = document.getElementById('ai-messages');
   container.querySelector('.ai-welcome')?.remove();
 
-  // User message
-  container.appendChild(buildMsg({ text, username: PROFILE?.username || 'You', uid: ME.uid, createdAt: null }, true));
+  container.appendChild(buildMsg({ text, username: PROFILE?.displayName || PROFILE?.username || 'You', uid: ME.uid, createdAt: null }, true));
   aiHistory.push({ role: 'user', content: text });
 
-  // Typing indicator
   const typing = document.createElement('div');
   typing.className = 'msg ai-msg';
   typing.innerHTML = `<div class="avatar sm" style="background:linear-gradient(135deg,var(--accent),#6366f1)"><i class="fa-solid fa-robot" style="font-size:10px"></i></div>
@@ -726,9 +738,14 @@ async function sendAI() {
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         system: 'You are a helpful AI assistant built into WConnect, a chat platform. Be friendly, concise, and helpful.',
         messages: aiHistory
@@ -737,12 +754,11 @@ async function sendAI() {
     const data = await resp.json();
     const reply = data.content?.[0]?.text || 'Sorry, I had trouble responding.';
     aiHistory.push({ role: 'assistant', content: reply });
-
     typing.remove();
     container.appendChild(buildMsg({ text: reply, username: 'AI', uid: '__ai__', createdAt: null }, false, true));
   } catch(e) {
     typing.remove();
-    container.appendChild(buildMsg({ text: 'AI is offline. Check back soon!', username: 'AI', uid: '__ai__', createdAt: null }, false, true));
+    container.appendChild(buildMsg({ text: `Error: ${e.message}`, username: 'AI', uid: '__ai__', createdAt: null }, false, true));
   }
   container.scrollTop = container.scrollHeight;
 }
@@ -778,17 +794,39 @@ document.documentElement.setAttribute('data-color', savedColor);
 document.querySelector(`[data-theme-toggle="${savedTheme}"]`)?.classList.add('active');
 document.querySelector(`[data-color="${savedColor}"]`)?.classList.add('active');
 
-// Save email
 // Save display name
-document.getElementById('save-displayname-btn').addEventListener('click', async () => {
+document.getElementById('save-displayname-btn')?.addEventListener('click', async () => {
   const displayName = document.getElementById('settings-displayname').value.trim();
   if (!displayName) { showToast('Enter a display name.', 'error'); return; }
-  if (displayName.length > 32) { showToast('Display name too long (max 32 chars).', 'error'); return; }
-  await updateDoc(doc(db, 'users', ME.uid), { displayName });
-  PROFILE.displayName = displayName;
-  PROFILE.username = displayName;
-  showToast('Display name saved! Rejoin the page to see it in chat.', 'success');
+  if (displayName.length > 32) { showToast('Max 32 characters.', 'error'); return; }
+  try {
+    await updateDoc(doc(db, 'users', ME.uid), { displayName });
+    // Refresh local profile immediately
+    const freshSnap = await getDoc(doc(db, 'users', ME.uid));
+    if (freshSnap.exists()) PROFILE = freshSnap.data();
+    // Update sidebar name
+    const el = document.getElementById('sidebar-username');
+    if (el) el.textContent = displayName;
+    showToast('Display name updated! New messages will use it.', 'success');
+  } catch(e) {
+    showToast('Error saving display name.', 'error');
+  }
 });
+
+// Load saved AI key
+window._wcAiKey = localStorage.getItem('wc-ai-key') || '';
+const keyInput = document.getElementById('ai-api-key-input');
+if (keyInput && window._wcAiKey) keyInput.value = window._wcAiKey;
+
+document.getElementById('save-ai-key-btn')?.addEventListener('click', () => {
+  const key = document.getElementById('ai-api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) { showToast('That doesn\'t look like a valid key. It should start with sk-ant-', 'error'); return; }
+  window._wcAiKey = key;
+  localStorage.setItem('wc-ai-key', key);
+  showToast('API key saved! AI chat is ready.', 'success');
+});
+
+// Save email
 document.getElementById('save-email-btn').addEventListener('click', async () => {
   const email = document.getElementById('settings-email').value.trim();
   const notif = document.getElementById('email-notif').checked;
