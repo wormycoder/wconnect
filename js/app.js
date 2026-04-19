@@ -106,7 +106,7 @@ async function sendGlobal() {
   input.value = '';
   await addDoc(collection(db, 'global'), {
     text, uid: ME.uid,
-    username: PROFILE?.username || 'Anonymous',
+   username: PROFILE?.displayName || PROFILE?.username || 'Anonymous',
     createdAt: serverTimestamp()
   });
 }
@@ -202,7 +202,7 @@ async function openDM(dmId, otherId, otherName) {
     if (!text) return;
     input.value = '';
     await addDoc(collection(db, 'dms', dmId, 'messages'), {
-      text, uid: ME.uid, username: PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
+      text, uid: ME.uid, username: PROFILE?.displayName || PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
     });
     await setDoc(doc(db, 'dms', dmId), { lastMsg: text, lastAt: serverTimestamp() }, { merge: true });
   };
@@ -307,7 +307,7 @@ async function openGroup(groupId, data) {
     if (!text) return;
     input.value = '';
     await addDoc(collection(db, 'groups', groupId, 'messages'), {
-      text, uid: ME.uid, username: PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
+      text, uid: ME.uid, username: PROFILE?.displayName || PROFILE?.username || 'Anonymous', createdAt: serverTimestamp()
     });
     await updateDoc(doc(db, 'groups', groupId), { lastMsg: text, lastAt: serverTimestamp() });
   };
