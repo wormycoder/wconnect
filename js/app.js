@@ -39,6 +39,9 @@ function initApp() {
   if (dn) dn.value = PROFILE?.displayName || PROFILE?.username || '';
   setAvatar(document.getElementById('settings-avatar'), PROFILE?.displayName || PROFILE?.username || '?');
 
+  // Username change section
+  initUsernameChangeSection();
+
   // Presence
   setupPresence();
 
@@ -810,6 +813,86 @@ document.getElementById('save-displayname-btn')?.addEventListener('click', async
     showToast('Display name updated! New messages will use it.', 'success');
   } catch(e) {
     showToast('Error saving display name.', 'error');
+  }
+});
+
+// Change username
+async function initUsernameChangeSection() {
+  const statusEl = document.getElementById('username-change-status');
+  const formEl = document.getElementById('username-change-form');
+  const permEl = document.getElementById('settings-perm-username');
+  if (!statusEl || !PROFILE) return;
+
+  if (permEl) permEl.textContent = PROFILE.username || '';
+
+  const lastChanged = PROFILE.usernameChangedAt?.toDate ? PROFILE.usernameChangedAt.toDate() : null;
+  const now = new Date();
+  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+  if (lastChanged && (now - lastChanged) < ONE_WEEK_MS) {
+    const nextChange = new Date(lastChanged.getTime() + ONE_WEEK_MS);
+    const daysLeft = Math.ceil((nextChange - now) / (1000 * 60 * 60 * 24));
+    statusEl.innerHTML = `⏳ You changed your username recently. You can change it again in <strong>${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong> (${nextChange.toLocaleDateString()}).`;
+    if (formEl) {
+      formEl.querySelector('input').disabled = true;
+      formEl.querySelector('button').disabled = true;
+      formEl.style.opacity = '0.5';
+    }
+  } else {
+    statusEl.textContent = lastChanged
+      ? `Last changed: ${lastChanged.toLocaleDateString()}. You can change it now.`
+      : 'You haven\'t changed your username yet.';
+  }
+}
+
+document.getElementById('save-username-btn')?.addEventListener('click', async () => {
+  const newUsername = document.getElementById('settings-new-username').value.trim();
+  if (!newUsername) { showToast('Enter a new username.', 'error'); return; }
+  if (newUsername.length < 3) { showToast('Username must be at least 3 characters.', 'error'); return; }
+  if (newUsername.length > 20) { showToast('Username can be at most 20 characters.', 'error'); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) { showToast('Only letters, numbers, and underscores allowed.', 'error'); return; }
+  if (newUsername.toLowerCase() === PROFILE?.username?.toLowerCase()) { showToast('That\'s already your username.', 'error'); return; }
+
+  // Re-check cooldown server-side by re-fetching profile
+  const freshSnap = await getDoc(doc(db, 'users', ME.uid));
+  if (!freshSnap.exists()) { showToast('Could not verify your account.', 'error'); return; }
+  const freshProfile = freshSnap.data();
+  const lastChanged = freshProfile.usernameChangedAt?.toDate ? freshProfile.usernameChangedAt.toDate() : null;
+  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  if (lastChanged && (new Date() - lastChanged) < ONE_WEEK_MS) {
+    showToast('You can only change your username once per week.', 'error');
+    return;
+  }
+
+  // Check uniqueness
+  const { getDocs: gds, query: q2, collection: col2, where: wh } =
+    await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+  const taken = await getDocs(query(collection(db, 'users'), where('usernameLower', '==', newUsername.toLowerCase())));
+  if (!taken.empty) { showToast('That username is already taken. Try another.', 'error'); return; }
+
+  const btn = document.getElementById('save-username-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  try {
+    await updateDoc(doc(db, 'users', ME.uid), {
+      username: newUsername,
+      usernameLower: newUsername.toLowerCase(),
+      usernameChangedAt: serverTimestamp(),
+    });
+    // Refresh local profile
+    const updated = await getDoc(doc(db, 'users', ME.uid));
+    if (updated.exists()) PROFILE = updated.data();
+    // Update UI
+    document.getElementById('settings-perm-username').textContent = newUsername;
+    document.getElementById('settings-username-display').textContent = newUsername;
+    document.getElementById('settings-new-username').value = '';
+    showToast('Username changed successfully!', 'success');
+    initUsernameChangeSection(); // re-render cooldown info
+  } catch(e) {
+    showToast('Error changing username: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Change';
   }
 });
 
