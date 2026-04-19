@@ -898,23 +898,20 @@ async function sendAI() {
   container.scrollTop = container.scrollHeight;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        system: 'You are a helpful AI assistant built into WConnect, a chat platform. Be friendly, concise, and helpful.',
-        messages: aiHistory
+        system_instruction: { parts: [{ text: 'You are a helpful AI assistant built into WConnect, a chat platform. Be friendly, concise, and helpful.' }] },
+        contents: aiHistory.map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        }))
       })
     });
     const data = await resp.json();
-    const reply = data.content?.[0]?.text || 'Sorry, I had trouble responding.';
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I had trouble responding.';
     aiHistory.push({ role: 'assistant', content: reply });
     typing.remove();
     container.appendChild(buildMsg({ text: reply, username: 'AI', uid: '__ai__', createdAt: null }, false, true));
@@ -1060,7 +1057,7 @@ if (keyInput && window._wcAiKey) keyInput.value = window._wcAiKey;
 
 document.getElementById('save-ai-key-btn')?.addEventListener('click', () => {
   const key = document.getElementById('ai-api-key-input').value.trim();
-  if (!key.startsWith('sk-ant-')) { showToast('That doesn\'t look like a valid key. It should start with sk-ant-', 'error'); return; }
+  if (!key.startsWith('AIza')) { showToast('That doesn\'t look like a valid Gemini key. It should start with AIza', 'error'); return; }
   window._wcAiKey = key;
   localStorage.setItem('wc-ai-key', key);
   showToast('API key saved! AI chat is ready.', 'success');
