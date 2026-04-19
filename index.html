@@ -112,6 +112,8 @@
       <div class="chat-area" id="global-messages"></div>
       <div class="chat-input-bar">
         <div class="chat-input-wrap">
+          <button class="attach-btn" id="global-attach-btn" title="Send a file (watch a short ad)"><i class="fa-solid fa-paperclip"></i></button>
+          <input type="file" id="global-file-input" style="display:none" accept="image/*,.pdf,.txt,.zip" />
           <input type="text" id="global-input" placeholder="Message everyone..." />
           <button class="send-btn" id="global-send"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -329,6 +331,34 @@
     <p class="modal-label">Select friends to add:</p>
     <div id="group-friend-select" class="friend-select-list"></div>
     <button class="btn-primary" id="confirm-create-group">Create Group</button>
+  </div>
+</div>
+
+<!-- AD MODAL -->
+<div id="ad-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div class="modal-header" style="justify-content:center;border:none;padding-bottom:0">
+      <h3 style="margin:0">📎 Send a File</h3>
+    </div>
+    <p style="color:var(--text2);font-size:13px;margin:8px 0 16px">Watch a short ad to unlock file sending. Your support keeps WConnect free!</p>
+    <div id="ad-container" style="margin-bottom:16px">
+      <!-- BEGIN AADS AD UNIT 2435015 -->
+      <div id="frame" style="width:100%;margin:auto;position:relative;z-index:99998;">
+        <iframe data-aa='2435015' src='//acceptable.a-ads.com/2435015/?size=Adaptive'
+          style='border:0;padding:0;width:70%;height:auto;overflow:hidden;display:block;margin:auto'></iframe>
+      </div>
+      <!-- END AADS AD UNIT 2435015 -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px">
+        <div id="ad-countdown" style="font-size:22px;font-weight:700;color:var(--accent);background:var(--bg3);border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:2px solid var(--accent)">5</div>
+        <p style="color:var(--text2);font-size:13px;margin:0">Please wait while the ad loads…</p>
+      </div>
+    </div>
+    <div id="ad-file-ready" class="hidden">
+      <p style="color:var(--text2);font-size:13px;margin-bottom:12px">✅ Thanks! Your file is ready to send.</p>
+      <div id="ad-file-preview" style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border:1.5px solid var(--border);font-size:13px;color:var(--text2)"></div>
+      <button class="btn-primary" id="ad-send-file-btn" style="width:100%"><i class="fa-solid fa-paper-plane"></i> Send File</button>
+    </div>
+    <button class="btn-ghost sm" id="ad-cancel-btn" style="margin-top:8px;width:100%">Cancel</button>
   </div>
 </div>
 
