@@ -43,6 +43,7 @@ async function createUserProfile(uid, username, email = '') {
     uid,
     username,
     usernameLower: username.toLowerCase(),
+    displayName: username,
     email: email || '',
     emailNotif: false,
     createdAt: serverTimestamp(),
